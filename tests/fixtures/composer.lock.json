@@ -1,0 +1,48 @@
+{
+    "_readme": ["This file is @generated automatically"],
+    "content-hash": "abc123",
+    "packages": [
+        {
+            "name": "guzzlehttp/guzzle",
+            "version": "7.8.1",
+            "notification-url": "https://packagist.org/downloads/",
+            "require": {
+                "guzzlehttp/promises": "^2.0",
+                "guzzlehttp/psr7": "^2.1"
+            }
+        },
+        {
+            "name": "guzzlehttp/promises",
+            "version": "2.0.2",
+            "notification-url": "https://packagist.org/downloads/",
+            "require": {}
+        },
+        {
+            "name": "guzzlehttp/psr7",
+            "version": "2.6.2",
+            "notification-url": "https://packagist.org/downloads/",
+            "require": {}
+        },
+        {
+            "name": "my-vendor/private-lib",
+            "version": "1.0.0",
+            "require": {}
+        }
+    ],
+    "packages-dev": [
+        {
+            "name": "pestphp/pest",
+            "version": "4.0.0",
+            "notification-url": "https://packagist.org/downloads/",
+            "require": {
+                "phpunit/phpunit": "^11.0"
+            }
+        },
+        {
+            "name": "phpunit/phpunit",
+            "version": "11.0.0",
+            "notification-url": "https://packagist.org/downloads/",
+            "require": {}
+        }
+    ]
+}

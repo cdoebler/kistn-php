@@ -1,0 +1,6 @@
+.DS_Store
+.idea/
+CLAUDE.local.md
+/kistn.config.php
+/tests/Coverage/
+/vendor/

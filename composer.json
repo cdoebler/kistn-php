@@ -1,0 +1,52 @@
+{
+    "name": "kistn/php-client",
+    "description": "PHP client for the Kistn API",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "psr/http-client": "^1.0",
+        "psr/http-factory": "^1.0"
+    },
+    "require-dev": {
+        "pestphp/pest": "^4.0",
+        "guzzlehttp/guzzle": "^7.0",
+        "nyholm/psr7": "^1.8",
+        "rector/rector": "^2.4",
+        "phpstan/phpstan": "^2.2",
+        "laravel/pao": "^1.1"
+    },
+    "suggest": {
+        "guzzlehttp/guzzle": "PSR-18 HTTP client implementation"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kistn\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kistn\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "scripts": {
+        "ci:check": [
+            "Composer\\Config::disableProcessTimeout",
+            "@phpstan",
+            "@rector:check",
+            "@pest"
+        ],
+        "pest": "vendor/bin/pest --stop-on-failure",
+        "pest-parallel": "vendor/bin/pest --stop-on-failure --parallel",
+        "coverage": "vendor/bin/pest --coverage",
+        "coverage-html": "vendor/bin/pest --coverage-html tests/Coverage",
+        "phpstan": "vendor/bin/phpstan analyse --memory-limit=512M",
+        "rector": "php -d memory_limit=512M vendor/bin/rector process",
+        "rector:check": "php -d memory_limit=512M vendor/bin/rector process --dry-run"
+    }
+}

@@ -1,0 +1,54 @@
+name: PHPStan
+
+on:
+  push:
+    paths:
+      - "**/*.php"
+      - "composer.json"
+      - "composer.lock"
+      - "phpstan.neon"
+      - "phpstan.neon.dist"
+      - ".github/workflows/phpstan.yml"
+  pull_request:
+    paths:
+      - "**/*.php"
+      - "composer.json"
+      - "composer.lock"
+      - "phpstan.neon"
+      - "phpstan.neon.dist"
+      - ".github/workflows/phpstan.yml"
+
+concurrency:
+  group: phpstan-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phpstan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          coverage: none
+          tools: composer:v2
+
+      - name: Get Composer cache dir
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run PHPStan
+        run: composer phpstan
