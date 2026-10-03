@@ -5,6 +5,7 @@ return [
     'project_id' => 'your-project-uuid-here',
     'token'      => 'your-api-token-here',
 
-    'transmit_composer_files' => 'true',      // true | false | on-demand
-    'transmit_npm_files'      => 'true',      // true | false | on-demand
+    // Upload lock files to the server? false (default) | true | 'on-demand' — see README "Lock file upload"
+    'transmit_composer_files' => false,
+    'transmit_npm_files'      => false,
 ];

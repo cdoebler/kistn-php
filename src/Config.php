@@ -41,8 +41,8 @@ class Config
             throw new InventoryException("Config values must be strings in {$path}");
         }
 
-        $transmitComposerFiles = self::resolveTransmitMode($data['transmit_composer_files'] ?? true, 'transmit_composer_files', $path);
-        $transmitNpmFiles = self::resolveTransmitMode($data['transmit_npm_files'] ?? true, 'transmit_npm_files', $path);
+        $transmitComposerFiles = self::resolveTransmitMode($data['transmit_composer_files'] ?? false, 'transmit_composer_files', $path);
+        $transmitNpmFiles = self::resolveTransmitMode($data['transmit_npm_files'] ?? false, 'transmit_npm_files', $path);
 
         return new self(
             baseUrl: rtrim($baseUrl, '/'),
@@ -63,7 +63,8 @@ class Config
             throw new InventoryException("Config key '{$key}' must be a bool or string in {$path}");
         }
 
-        return TransmitMode::tryFrom($raw) ?? TransmitMode::Always;
+        // Uploading lock files shares the full dependency tree with the server — opt-in only, also for typos.
+        return TransmitMode::tryFrom($raw) ?? TransmitMode::Never;
     }
 
     public function baseUrl(): string

@@ -288,7 +288,7 @@ test('cache is updated with new lock file hash after push', function () {
     unlink($cachePath);
 });
 
-it('uploads files after push when TransmitMode is Always', function (): void {
+it('uploads composer files after push only when enabled', function (array $transmitModes, bool $expectedUpload): void {
     $tmpFile = tempnam(sys_get_temp_dir(), 'lock');
     file_put_contents($tmpFile, '{}');
 
@@ -315,13 +315,16 @@ it('uploads files after push when TransmitMode is Always', function (): void {
     $cache = new LocalHashCache($cachePath);
     $cache->set('composer', 'old-hash');
 
-    $pusher = new InventoryPusher($client, [$collector], $cache, TransmitMode::Always, TransmitMode::Never);
+    $pusher = new InventoryPusher($client, [$collector], $cache, ...$transmitModes);
     $pusher->pushAll();
 
-    expect($uploadCalled)->toBeTrue();
+    expect($uploadCalled)->toBe($expectedUpload);
     unlink($tmpFile);
     unlink($cachePath);
-});
+})->with([
+    'Always' => [[TransmitMode::Always, TransmitMode::Never], true],
+    'default' => [[], false],
+]);
 
 it('skips upload when TransmitMode is Never', function (): void {
     $uploadCalled = false;

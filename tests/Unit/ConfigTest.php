@@ -2,6 +2,7 @@
 
 use Kistn\Config;
 use Kistn\Exception\InventoryException;
+use Kistn\TransmitMode;
 
 beforeEach(function () {
     $this->validConfigPath = sys_get_temp_dir() . '/test-inventory-config-' . uniqid() . '.php';
@@ -20,6 +21,22 @@ test('Config loads valid config file', function () {
     expect($config->projectId())->toBe('uuid-123');
     expect($config->token())->toBe('tok_abc');
 });
+
+test('Config does not transmit files unless enabled', function (string $transmitEntries, TransmitMode $expected) {
+    $path = sys_get_temp_dir() . '/test-config-transmit-' . uniqid() . '.php';
+    file_put_contents($path, '<?php return ["base_url" => "https://x.com", "project_id" => "uuid", "token" => "tok"' . $transmitEntries . '];');
+
+    $config = Config::load($path);
+    unlink($path);
+
+    expect($config->transmitComposerFiles())->toBe($expected)
+        ->and($config->transmitNpmFiles())->toBe($expected);
+})->with([
+    'missing' => ['', TransmitMode::Never],
+    'typo' => [', "transmit_composer_files" => "ture", "transmit_npm_files" => "ture"', TransmitMode::Never],
+    'bool true' => [', "transmit_composer_files" => true, "transmit_npm_files" => true', TransmitMode::Always],
+    'on-demand' => [', "transmit_composer_files" => "on-demand", "transmit_npm_files" => "on-demand"', TransmitMode::OnDemand],
+]);
 
 test('Config throws when file does not exist', function () {
     expect(fn () => Config::load('/nonexistent/path.php'))

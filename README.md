@@ -21,8 +21,26 @@ return [
     'base_url'   => 'https://your-server.example',
     'project_id' => 'your-project-uuid-here',
     'token'      => 'your-api-token-here',
+
+    'transmit_composer_files' => false, // false (default) | true | 'on-demand'
+    'transmit_npm_files'      => false, // false (default) | true | 'on-demand'
 ];
 ```
+
+#### Lock file upload (`transmit_composer_files` / `transmit_npm_files`)
+
+Every push sends the package inventory (names, versions, dependency flags) and your local audit findings.
+Your lock and manifest files (`composer.lock`, `composer.json`, `installed.json`, `package-lock.json`, `package.json`)
+are **not** uploaded unless you opt in:
+
+| Value | Behaviour |
+|---|---|
+| `false` (default, also used for missing/invalid values) | No files are uploaded. |
+| `true` | Upload the files whenever the package list changed. |
+| `'on-demand'` | Upload only when `composer` / `npm` is unavailable locally, so the server can run the audit instead. |
+
+Uploaded files let the Kistn server run its own audit and cross-check your local findings. They contain
+your full dependency tree, so enable this only if you are fine sharing that data with the server.
 
 Wire up and push:
 
@@ -67,6 +85,8 @@ $pusher = new InventoryPusher(
         ),
     ],
     cache: new LocalHashCache(__DIR__ . '/.inventory.hash'),
+    transmitComposerFiles: $config->transmitComposerFiles(),
+    transmitNpmFiles: $config->transmitNpmFiles(),
 );
 
 $pusher->pushAll();
@@ -79,7 +99,7 @@ $pusher->pushAll();
 3. Collect packages via `composer show --format=json` / `npm list --json`.
 4. Compute content hash — skip ecosystem if matches server.
 5. POST bundled payload (all changed ecosystems in one call).
-6. Upload lock files for ecosystems with package-level changes (per `TransmitMode`).
+6. Upload lock files for ecosystems with package-level changes — only if enabled via `TransmitMode` (off by default).
 7. Store lock-file hash per ecosystem in local cache.
 
 ## Architecture

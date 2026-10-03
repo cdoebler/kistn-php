@@ -18,8 +18,8 @@ class InventoryPusher
         private readonly InventoryClientInterface $client,
         private readonly array $collectors,
         private readonly LocalHashCache $cache,
-        private readonly TransmitMode $transmitComposerFiles = TransmitMode::Always,
-        private readonly TransmitMode $transmitNpmFiles = TransmitMode::Always,
+        private readonly TransmitMode $transmitComposerFiles = TransmitMode::Never,
+        private readonly TransmitMode $transmitNpmFiles = TransmitMode::Never,
     ) {}
 
     public function pushAll(): void
