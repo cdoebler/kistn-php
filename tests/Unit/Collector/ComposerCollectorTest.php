@@ -62,6 +62,24 @@ test('ComposerCollector parses findings from audit output', function () use ($fi
     expect($payload->findings[0]->severity)->toBe('high');
 });
 
+test('ComposerCollector maps a missing severity to one the server accepts', function () use ($fixturesDir) {
+    $auditJson = json_encode([
+        'advisories' => [
+            'guzzlehttp/guzzle' => [
+                ['advisoryId' => 'PKSA-xxxx', 'packageName' => 'guzzlehttp/guzzle', 'affectedVersions' => '<7.8.1', 'severity' => null],
+            ],
+        ],
+    ]);
+
+    $collector = new ComposerCollector(
+        lockFilePath: $fixturesDir . '/composer.lock.json',
+        composerJsonPath: $fixturesDir . '/composer.json',
+        runner: makeProcessRunner($auditJson, 1),
+    );
+
+    expect($collector->collect()->findings[0]->severity)->toBe('low');
+});
+
 test('ComposerCollector returns empty findings on audit binary failure', function () use ($fixturesDir) {
     $collector = new ComposerCollector(
         lockFilePath: $fixturesDir . '/composer.lock.json',

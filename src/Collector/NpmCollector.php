@@ -99,21 +99,37 @@ class NpmCollector implements CollectorInterface
         $findings = [];
 
         foreach ($vulnerabilities as $name => $vuln) {
-            if (! is_array($vuln)) {
+            if (! is_array($vuln) || ! is_array($vuln['via'] ?? null)) {
                 continue;
             }
 
-            $advisoryId = $this->extractAdvisoryId($vuln);
-            $severityValue = $vuln['severity'] ?? 'unknown';
             $nameValue = $vuln['name'] ?? null;
             $resolvedName = is_string($nameValue) ? $nameValue : (is_string($name) ? $name : null);
 
-            $findings[] = new Finding(
-                packageName: $resolvedName ?? 'unknown',
-                packageVersion: $resolvedName !== null ? ($installedVersions[$resolvedName] ?? '*') : '*',
-                advisoryId: $advisoryId,
-                severity: is_string($severityValue) ? $severityValue : 'unknown',
-            );
+            if ($resolvedName === null) {
+                continue;
+            }
+
+            // String `via` entries only name a vulnerable dependency ("Depends on vulnerable versions of X");
+            // that dependency is reported with its own advisory, so they are not findings of this package.
+            foreach ($vuln['via'] as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $advisoryId = $this->extractAdvisoryId($item);
+
+                if ($advisoryId === null) {
+                    continue;
+                }
+
+                $findings[] = new Finding(
+                    packageName: $resolvedName,
+                    packageVersion: $installedVersions[$resolvedName] ?? '*',
+                    advisoryId: $advisoryId,
+                    severity: Finding::normalizeSeverity($item['severity'] ?? $vuln['severity'] ?? null),
+                );
+            }
         }
 
         return $findings;
@@ -166,23 +182,25 @@ class NpmCollector implements CollectorInterface
         }, $packages);
     }
 
-    /** @param array<array-key, mixed> $vuln */
-    private function extractAdvisoryId(array $vuln): string
+    /**
+     * GHSA id from the advisory URL, else npm's numeric advisory id (`source`); null when neither exists.
+     *
+     * @param  array<array-key, mixed>  $advisory  One object entry of npm audit's `via`
+     */
+    private function extractAdvisoryId(array $advisory): ?string
     {
-        $viaRaw = $vuln['via'] ?? [];
+        $url = $advisory['url'] ?? null;
 
-        if (! is_array($viaRaw)) {
-            return 'unknown';
+        if (is_string($url) && preg_match('/GHSA-[a-z0-9-]+/i', $url, $m)) {
+            return $m[0];
         }
 
-        foreach ($viaRaw as $item) {
-            if (is_array($item) && isset($item['url']) && is_string($item['url'])) {
-                if (preg_match('/GHSA-[a-z0-9-]+/i', $item['url'], $m)) {
-                    return $m[0];
-                }
-            }
+        $source = $advisory['source'] ?? null;
+
+        if (is_int($source) || (is_string($source) && ctype_digit($source))) {
+            return 'NPM-' . $source;
         }
 
-        return 'unknown';
+        return null;
     }
 }

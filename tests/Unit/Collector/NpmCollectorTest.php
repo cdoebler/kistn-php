@@ -81,6 +81,55 @@ test('NpmCollector parses findings from npm audit output', function () use ($fix
     expect($payload->findings[0]->packageVersion)->toBe('4.18.2');
 });
 
+test('NpmCollector reports only the vulnerable package, not packages that merely depend on it', function () use ($fixturesDir) {
+    $auditJson = json_encode([
+        'vulnerabilities' => [
+            'braces' => [
+                'name' => 'braces',
+                'severity' => 'high',
+                'via' => [['source' => 1112345, 'url' => 'https://github.com/advisories/GHSA-vfj7-8cjw-p6xm', 'severity' => 'high']],
+            ],
+            'micromatch' => ['name' => 'micromatch', 'severity' => 'high', 'via' => ['braces']],
+            'fast-glob' => ['name' => 'fast-glob', 'severity' => 'high', 'via' => ['micromatch']],
+        ],
+    ]);
+
+    $collector = new NpmCollector(
+        lockFilePath: $fixturesDir . '/package-lock.json',
+        packageJsonPath: $fixturesDir . '/package.json',
+        runner: makeNpmRunner($auditJson, 1),
+    );
+
+    expect(array_map(fn ($f) => [$f->packageName, $f->advisoryId], $collector->collect()->findings))
+        ->toBe([['braces', 'GHSA-vfj7-8cjw-p6xm']]);
+});
+
+test('NpmCollector reports every advisory of a package with a normalized severity', function () use ($fixturesDir) {
+    $auditJson = json_encode([
+        'vulnerabilities' => [
+            'lodash' => [
+                'name' => 'lodash',
+                'severity' => 'critical',
+                'via' => [
+                    ['url' => 'https://github.com/advisories/GHSA-aaaa-bbbb-cccc', 'severity' => 'moderate'],
+                    'some-dependency',
+                    ['source' => 1096410, 'url' => 'https://example.com/no-ghsa', 'severity' => 'info'],
+                    ['url' => 'https://example.com/no-id', 'severity' => 'low'],
+                ],
+            ],
+        ],
+    ]);
+
+    $collector = new NpmCollector(
+        lockFilePath: $fixturesDir . '/package-lock.json',
+        packageJsonPath: $fixturesDir . '/package.json',
+        runner: makeNpmRunner($auditJson, 1),
+    );
+
+    expect(array_map(fn ($f) => [$f->advisoryId, $f->severity], $collector->collect()->findings))
+        ->toBe([['GHSA-aaaa-bbbb-cccc', 'medium'], ['NPM-1096410', 'low']]);
+});
+
 test('NpmCollector falls back to * for packages not in lock file', function () use ($fixturesDir) {
     $auditJson = json_encode([
         'vulnerabilities' => [

@@ -105,13 +105,11 @@ class ComposerCollector implements CollectorInterface
                 $advisoryPackageName = is_string($advisory['packageName'] ?? null) ? $advisory['packageName'] : $packageName;
                 $affectedVersions = is_string($advisory['affectedVersions'] ?? null) ? $advisory['affectedVersions'] : '';
                 $advisoryId = is_string($advisory['advisoryId'] ?? null) ? $advisory['advisoryId'] : '';
-                $severity = is_string($advisory['severity'] ?? null) ? $advisory['severity'] : 'unknown';
-
                 $findings[] = new Finding(
                     packageName: $advisoryPackageName,
                     packageVersion: $this->resolveAffectedVersion($affectedVersions) ?: 'unknown',
                     advisoryId: $advisoryId,
-                    severity: $severity,
+                    severity: Finding::normalizeSeverity($advisory['severity'] ?? null),
                 );
             }
         }
